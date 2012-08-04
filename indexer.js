@@ -11,7 +11,11 @@ module.exports = function setup(mount, root, showHidden) {
     if (!path || path.substr(0, mount.length) !== mount) {
       return next();
     }
+
+    // setup actual file path
     path = Path.join(root, path.substr(mount.length));
+
+    //strip end slash
     if (path[path.length - 1] === '/') { path = path.substr(0, path.length - 1); }
     Fs.stat(path, function (err, stat) {
       if (err) { 
@@ -51,7 +55,7 @@ module.exports = function setup(mount, root, showHidden) {
           left--;
           if (left > 0) { return; }
           var html = data.map(function (item) {
-            return '<li' + (item.name[0] === '.' && item.name !== '..' ? ' class="hidden" ' : '') + '><a href="' + h(item.name) + '">' + h(item.name) + '</a></li>';
+            return '<li' + (item.name[0] === '.' && item.name !== '..' ? ' class="hidden" ' : '') + '><a href="' + h(mount) + "/" + h(item.name) + '">' + h(item.name) + '</a></li>';
           }).join("\n");
           html = '<h1>' + h(path) + '</h1>\n' +
                  '<ul>' + html + '</ul>';
