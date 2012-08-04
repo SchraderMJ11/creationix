@@ -7,6 +7,7 @@ module.exports = function setup(mount, root, showHidden) {
 
   return function handle(req, res, next) {
     var accept = req.headers['accept'];
+    var acceptJson = accept === 'application/json';
 
     if (!req.uri) { req.uri = Url.parse(req.url); }
     var path = unescape(req.uri.pathname).replace(/\.\.+/g, '.');
@@ -41,7 +42,8 @@ module.exports = function setup(mount, root, showHidden) {
         files.forEach(function (file, index) {
           var fullPath = Path.join(path, file);
           var item = data[index] = {
-            name: file
+            name: file,
+            path: mount + relative_path + '/' + file
           };
           Fs.stat(fullPath, function (err, stat) {
             if (err) { return checkQueue(); }
@@ -56,13 +58,30 @@ module.exports = function setup(mount, root, showHidden) {
           });
         });
         function checkQueue() {
+          if(acceptJson) {
+            checkQueueJson();
+          } else {
+            checkQueueHtml();
+          }
+        }
+
+        function checkQueueJson() {
+          var jsonString = JSON.stringify(data);
+          res.writeHead(200, {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(jsonString)
+          });
+          res.end(jsonString);
+        }
+          
+        function checkQueueHtml() {
           left--;
           if (left > 0) { return; }
           var html = data.map(function (item) {
             var li = '<li' + (item.name[0] === '.' && item.name !== '..' ? ' class="hidden" ' : '') + '>'
             li += '<a href="';
 
-            li += h(mount) + relative_path + '/' + item.name;
+            li += h(item.path);
 
             li += '">' + h(item.name) + '</a></li>';
 
