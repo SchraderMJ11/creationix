@@ -6,11 +6,15 @@ var Fs = require('fs'),
 module.exports = function setup(mount, root, showHidden) {
 
   return function handle(req, res, next) {
+    var accept = req.headers['accept'];
+
     if (!req.uri) { req.uri = Url.parse(req.url); }
     var path = unescape(req.uri.pathname).replace(/\.\.+/g, '.');
     if (!path || path.substr(0, mount.length) !== mount) {
       return next();
     }
+
+    var relative_path = path.substr(mount.length);
 
     // setup actual file path
     path = Path.join(root, path.substr(mount.length));
@@ -55,7 +59,14 @@ module.exports = function setup(mount, root, showHidden) {
           left--;
           if (left > 0) { return; }
           var html = data.map(function (item) {
-            return '<li' + (item.name[0] === '.' && item.name !== '..' ? ' class="hidden" ' : '') + '><a href="' + h(mount) + "/" + h(item.name) + '">' + h(item.name) + '</a></li>';
+            var li = '<li' + (item.name[0] === '.' && item.name !== '..' ? ' class="hidden" ' : '') + '>'
+            li += '<a href="';
+
+            li += h(mount) + relative_path + '/' + item.name;
+
+            li += '">' + h(item.name) + '</a></li>';
+
+            return li;
           }).join("\n");
           html = '<h1>' + h(path) + '</h1>\n' +
                  '<ul>' + html + '</ul>';
